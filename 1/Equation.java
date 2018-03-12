@@ -1,6 +1,7 @@
 //package com.example.tomek.Zadanie1;
 
 import java.lang.Math;
+import java.lang.IllegalArgumentException;
 import java.util.*;
 
 /**
@@ -23,11 +24,13 @@ class Equation{
     
 
     
-    private void solveEquation(){
+    private void solveEquation() throws IllegalArgumentException{
         
         double delta = Math.pow(b,2) - 4*a*c;
         
-        if(delta == 0){
+        if(a == 0){
+            throw new IllegalArgumentException("This is not quadratic equation!");
+        }else if(delta == 0){
             double x0 = (-b)/(2*a);
             solutions.add(x0);
         }else if(delta > 0){
