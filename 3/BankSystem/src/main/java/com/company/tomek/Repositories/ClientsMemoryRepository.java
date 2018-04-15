@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  *  Class which saves client to memory
@@ -48,7 +49,7 @@ public class ClientsMemoryRepository implements  BankingRepositories{
     }
 
     @Override
-    public boolean saveUsersOnExit() {
+    public boolean saveAllUsers() {
         try(ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream("users.txt"))){
             for(BankClient bankClient: allBankClient) {
                 outStream.writeObject(bankClient);
@@ -87,7 +88,7 @@ public class ClientsMemoryRepository implements  BankingRepositories{
     }
 
     @Override
-    public BankClient findUser(String personId) {
+    public BankClient findUserById(String personId) {
         Optional<BankClient> bankClients = allBankClient.stream().filter(
                 bankClient ->
                         bankClient.getPersonId().equals(personId)
@@ -98,8 +99,47 @@ public class ClientsMemoryRepository implements  BankingRepositories{
         } else {
             return null;
         }
-
     }
+
+    // todo add to interface...
+    @Override
+    public List<BankClient> findUsersByName(String name){
+        return allBankClient.stream().filter(
+                bankClient ->
+                        bankClient.getName().equals(name)
+        ).collect(Collectors.toList());
+    }
+    @Override
+    public List<BankClient> findUsersBySurname(String surname){
+        return allBankClient.stream().filter(
+                bankClient ->
+                        bankClient.getLastName().equals(surname)
+        ).collect(Collectors.toList());
+    }
+
+    @Override
+    public BankClient findUsersByClientNumber(String surname){
+        Optional<BankClient> bankClients = allBankClient.stream().filter(
+                bankClient ->
+                        bankClient.getClientNumber().toString().equals(surname)
+        ).findFirst();
+
+        if (bankClients.isPresent()) {
+            return bankClients.get();
+        } else {
+            return null;
+        }
+    }
+    @Override
+    public List<BankClient> findUsersByAddress(String address){
+        return allBankClient.stream().filter(
+                bankClient ->
+                        bankClient.getAddress().equals(address)
+        ).collect(Collectors.toList());
+    }
+
+
+
 
     @Override
     public List<BankClient> getAllBankCustomers() {

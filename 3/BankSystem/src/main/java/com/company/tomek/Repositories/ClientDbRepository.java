@@ -28,7 +28,7 @@ public class ClientDbRepository implements BankingRepositories {
     }
 
     @Override
-    public boolean saveUsersOnExit() {
+    public boolean saveAllUsers() {
         throw new NotImplementedException();
     }
 
@@ -38,7 +38,7 @@ public class ClientDbRepository implements BankingRepositories {
     }
 
     @Override
-    public BankClient findUser(String personId) {
+    public BankClient findUserById(String personId) {
         throw new NotImplementedException();
     }
 
@@ -54,6 +54,26 @@ public class ClientDbRepository implements BankingRepositories {
 
     @Override
     public BigDecimal findTheLargestClientID() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<BankClient> findUsersByName(String name) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<BankClient> findUsersBySurname(String surname) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public BankClient findUsersByClientNumber(String surname) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<BankClient> findUsersByAddress(String address) {
         throw new NotImplementedException();
     }
 }

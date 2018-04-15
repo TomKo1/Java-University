@@ -7,13 +7,17 @@ import java.util.List;
 
 public interface BankingRepositories {
 
-    public boolean saveClient(BankClient bankClient);
-    public boolean deleteClient();
-    public boolean updateClientAccount();
-    public boolean saveUsersOnExit();
-    public boolean loadUsersOnEntry();
-    public BankClient findUser(String personId);
-    public List<BankClient> getAllBankCustomers();
-    public void deleteUser(BankClient bankClient);
+    boolean saveClient(BankClient bankClient);
+    boolean deleteClient();
+    boolean updateClientAccount();
+    boolean saveAllUsers();
+    boolean loadUsersOnEntry();
+    BankClient findUserById(String personId);
+    List<BankClient> getAllBankCustomers();
+    void deleteUser(BankClient bankClient);
     BigDecimal findTheLargestClientID();
+    List<BankClient> findUsersByName(String name);
+    List<BankClient> findUsersBySurname(String surname);
+    BankClient findUsersByClientNumber(String surname);
+    List<BankClient> findUsersByAddress(String address);
 }

@@ -64,7 +64,7 @@ public class InitBankingSystem {
                         bankingServices.createNewClient(scanner);
                         return true;
                 case "s":
-                    bankingServices.searchForUserUsingBankID(scanner);
+                    bankingServices.searchForSpecificUser(scanner);
                     return true;
                 case "o":
                     showProgramOptions();

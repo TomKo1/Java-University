@@ -33,7 +33,7 @@ public class BankingServices {
 
 
     public boolean saveUsersOnExit(){
-        return repository.saveUsersOnExit();
+        return repository.saveAllUsers();
     }
 
     public boolean loadUsersOnEntry(){
@@ -68,10 +68,13 @@ public class BankingServices {
             System.out.println("---------------");
             address = takeInfo("Type address: ",scanner);
             System.out.println("---------------");
+            BankClient bankClient = null;
             do {
                 System.out.println("Type person ID: ");
                 personID = scanner.nextLine();
-            }while(personID.length() != 11 || !personID.matches("[0-9]+"));
+                bankClient = repository.findUserById(personID);
+                if(bankClient != null ) System.out.println("User with this id is already in the system");
+            }while(personID.length() != 11 || !personID.matches("[0-9]+") || bankClient != null);
             System.out.println("---------------");
             do {
                 System.out.print("Type initial account balance: ");
@@ -86,8 +89,10 @@ public class BankingServices {
         }
 
 
-        if(confirmOperation(scanner)) addClient(new BankClient(firstFreeClientId, name, lastName, personID, initialBalance, address));
-
+        if(confirmOperation(scanner)) {
+            addClient(new BankClient(firstFreeClientId, name, lastName, personID, initialBalance, address));
+            repository.saveAllUsers();
+        }
 
     }
 
@@ -101,15 +106,16 @@ public class BankingServices {
     }
 
     public void addMoneyToAccount(Scanner scanner) {
-        try {
+
             System.out.println("Add money money");
             System.out.println("---------------");
             BankClient bankClient = null;
+        try {
             do {
                 System.out.print("Please type customer's Person ID (q to quit): ");
                 String personId = scanner.nextLine();
                 if (personId.equals("q")) return;
-                bankClient = repository.findUser(personId);
+                bankClient = repository.findUserById(personId);
                 if (bankClient == null) System.out.println("No such user!");
 
             } while (bankClient == null);
@@ -123,56 +129,154 @@ public class BankingServices {
                 if (moneyToAdd <= 0) System.out.println("You can add only positive/non-zero numbers");
             } while (moneyToAdd <= 0);
 
-            if(confirmOperation(scanner)) bankClient.addAdditionalMoney(moneyToAdd);
+            if(confirmOperation(scanner)){
+                bankClient.addAdditionalMoney(moneyToAdd);
+                repository.saveAllUsers();
+            }
 
         }catch(Exception e){
             printExceptionRemarks();
         }
     }
 
+//todo eliminate "big try"
 
-
-    public void searchForUserUsingBankID(Scanner scanner) {
+    public void searchForSpecificUser(Scanner scanner) {
         try {
-            System.out.println("Searching engine");
-            System.out.println("---------------");
-            System.out.print("Please type customer's Person ID: ");
-            String personId = scanner.nextLine();
-
-            BankClient bankClient = repository.findUser(personId);
-            if (bankClient == null) {
-                System.out.println("No such user!");
-            } else {
-                System.out.println("User found: ");
-                System.out.println("---------------");
-                System.out.println(bankClient);
-            }
+            String optionSelected ="";
+                do {
+                    System.out.println("Searching engine");
+                    System.out.println("---------------");
+                    optionSelected = selectSearchingOption(scanner);
+                }while(runAppropriateSearchingOption(optionSelected, scanner));
         }catch(Exception e){
            printExceptionRemarks();
         }
 
     }
 
+    private boolean runAppropriateSearchingOption(String option, Scanner scanner){
+        switch(option) {
+            case "c":
+                searchByClientNumber(scanner);
+                return false;
+            case "n":
+                searchByName(scanner);
+                return false;
+            case "s":
+                searchBySurname(scanner);
+                return false;
+            case "i":
+                searchById(scanner);
+                return false;
+            case "a":
+                searchByAddress(scanner);
+                return false;
+            case "q":
+                return false;
+            default:
+                System.out.println("No such option!");
+                return true;
+        }
+    }
+
+    private void searchByAddress(Scanner scanner) {
+        String address = takeAppriopriateParamForSearching("address", scanner);
+        List<BankClient> bankClients = repository.findUsersByAddress(address);
+        printAllUsersFromList(bankClients);
+    }
+
+    private void searchByClientNumber(Scanner scanner){
+        String clientId = takeAppriopriateParamForSearching("number", scanner);
+        BankClient bankClient = repository.findUsersByClientNumber(clientId);
+        printOneUserAfterSearching(bankClient);
+    }
+
+    private void printOneUserAfterSearching(BankClient bankClient) {
+        if (bankClient == null) {
+            System.out.println("No such user!");
+        } else {
+            System.out.println("User found: ");
+            System.out.println("---------------");
+            System.out.println(bankClient);
+        }
+    }
+
+    private void searchByName(Scanner scanner) {
+        String name = takeAppriopriateParamForSearching("name", scanner);
+        List<BankClient> bankClients = repository.findUsersByName(name);
+        printAllUsersFromList(bankClients);
+    }
 
 
+    private void searchBySurname(Scanner scanner) {
+        String surname = takeAppriopriateParamForSearching("surname", scanner);
+        List<BankClient> bankClients = repository.findUsersBySurname(surname);
+        printAllUsersFromList(bankClients);
+    }
 
-    //TODO ppowtorzenie kodu !!!
+    private String takeAppriopriateParamForSearching(String paramName, Scanner scanner){
+        System.out.print("Please type customer's "+paramName+":");
+        String surname = scanner.nextLine();
+        return surname;
+    }
+
+    private void printAllUsersFromList(List<BankClient> bankClientsList){
+        System.out.println("Users found: ");
+        if(bankClientsList.isEmpty()){
+            System.out.println("No such users!");
+            return ;
+        }
+        for(BankClient bankClient1: bankClientsList){
+            System.out.println(bankClient1);
+        }
+    }
+
+    private void searchById(Scanner scanner){
+        String personId = takeAppriopriateParamForSearching("Person ID", scanner);
+        BankClient bankClient = repository.findUserById(personId);
+        printOneUserAfterSearching(bankClient);
+    }
+
+    private String selectSearchingOption(Scanner scanner){
+        printSearchingOptions();
+        System.out.println("---------------");
+        System.out.println("Please select searching option: ");
+        String option = scanner.nextLine();
+        return option;
+    }
+
+    private void printSearchingOptions() {
+        System.out.println("---------------");
+        System.out.println("SEARCH BY: ");
+        System.out.println("c - client nubmer");
+        System.out.println("n - name");
+        System.out.println("s - surname");
+        System.out.println("i - person id");
+        System.out.println("a - address");
+        System.out.println("q - quit");
+    }
+
 
     public  void deleteUserWithSpecificPersonId(Scanner scanner) {
-        try {
+
             System.out.println("Deleting user");
             System.out.println("---------------");
             BankClient bankClient = null;
+        try {
             do {
                 System.out.print("Please type customer's Person ID (q to quit): ");
                 String personId = scanner.nextLine();//todo with multiple string with spaces crash
                 if (personId.equals("q")) return;
-                bankClient = repository.findUser(personId);
+                bankClient = repository.findUserById(personId);
                 if (bankClient == null) System.out.println("No such user!");
 
             } while (bankClient == null);
 
-            if(confirmOperation(scanner)) repository.deleteUser(bankClient);
+            if(confirmOperation(scanner)){
+                repository.deleteUser(bankClient);
+                repository.saveAllUsers();
+            }
 
         }catch(Exception e){
             printExceptionRemarks();
@@ -194,7 +298,7 @@ public class BankingServices {
                 //TODO try to be more specific
                 String personId = scanner.nextLine();
                 if (personId.equals("q")) return;
-                bankClient = repository.findUser(personId);
+                bankClient = repository.findUserById(personId);
                 if (bankClient == null) System.out.println("No such user!");
 
             } while (bankClient == null);
@@ -208,7 +312,10 @@ public class BankingServices {
                 if (moneyToAdd > bankClient.getMoney()) System.out.println("You can't withdraw more than you have!");
             } while (moneyToAdd <= 0 || moneyToAdd > bankClient.getMoney());
 
-            if(confirmOperation(scanner)) bankClient.addAdditionalMoney(-moneyToAdd);
+            if(confirmOperation(scanner)) {
+                bankClient.addAdditionalMoney(-moneyToAdd);
+                repository.saveAllUsers();
+            }
          }catch(Exception e){
                 printExceptionRemarks();
             }
@@ -220,15 +327,16 @@ public class BankingServices {
 
     //todo refactor the code with this method to BankingServices
     public  void transferBetweenTwoAccounts(Scanner scanner){
-        try {
+
             BankClient bankClient = null;
             BankClient bankClient2 = null;
             System.out.println("Transfer engine");
             System.out.println("---------------");
+        try {
             do {
                 System.out.print("Please type first customer's (sender) Person ID: ");
                 String personId = scanner.nextLine();
-                bankClient = repository.findUser(personId);
+                bankClient = repository.findUserById(personId);
                 if (bankClient == null) System.out.println("No such user!");
 
             } while (bankClient == null);
@@ -236,7 +344,7 @@ public class BankingServices {
             do {
                 System.out.print("Please type customer's (receiver's) Person ID: ");
                 String personId2 = scanner.nextLine();
-                bankClient2 = repository.findUser(personId2);
+                bankClient2 = repository.findUserById(personId2);
             } while (bankClient2 == null);
             double transferMoney = 0;
             do {
@@ -250,6 +358,7 @@ public class BankingServices {
             if(confirmOperation(scanner)){
                 bankClient.addAdditionalMoney(-transferMoney);
                 bankClient2.addAdditionalMoney(transferMoney);
+                repository.saveAllUsers();
             }
         }catch(Exception e){
             printExceptionRemarks();
@@ -272,7 +381,7 @@ public class BankingServices {
             System.out.println("Please confirm operation. [Y/N]");
             answer = scanner.nextLine();
             System.out.println("**********************************");
-        }while(checkAnsewr(answer));
+        }while(checkAnswer(answer));
         if(answer.equals("y")||answer.equals("Y")){
             return true;
           }else {
@@ -281,7 +390,7 @@ public class BankingServices {
          }
     }
 
-    private boolean checkAnsewr(String answer){
+    private boolean checkAnswer(String answer){
         if(answer.equals("Y") || answer.equals("y")||answer.equals("n")||answer.equals("N")){
             return false;
         }else{
