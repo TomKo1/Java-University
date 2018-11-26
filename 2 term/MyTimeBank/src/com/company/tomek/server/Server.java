@@ -3,20 +3,20 @@ package com.company.tomek.server;
 
 import com.company.tomek.server.storage.AppointmentsStorage;
 import com.company.tomek.server.storage.ClientStorage;
+import com.sun.xml.internal.ws.util.StringUtils;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.concurrent.Semaphore;
 
 public class Server implements Runnable {
 
     private Socket clientSocket;
-    // storage of appointments
-    //TODO: remove static
-    //TODO: get rid of new line signs
     private static final AppointmentsStorage appointmentsStorage = new AppointmentsStorage();
     private static final ClientStorage clientStorage = new ClientStorage();
     private final Semaphore semaphore = new Semaphore(1);
@@ -59,65 +59,72 @@ public class Server implements Runnable {
             PrintWriter printWriter = new PrintWriter(out);
             String request;
             while ((request = bufferedReader.readLine()) != null) {
-                //TODO: NumberFormatException, NoSuchElementException
                  try {
-                     handleRequest(request, printWriter);
+                     try {
+                         handleRequest(request, clientSocket);
+                     } catch(NumberFormatException | NoSuchElementException e) {
+                         printWriter.println("Error occured please corect your request format");
+                         printWriter.flush();
+                     }
                  } catch(NumberFormatException | NoSuchElementException | IndexOutOfBoundsException e) {
                      printWriter.println("Eror while handling request, please try again.");
                      printWriter.flush();
                  }
             }
 
+        } catch(SocketException e){
+            System.out.println("Goodbye");
+            return ;
         } catch (IOException | InterruptedException e) {
-            System.out.println("Error reading client's input stream");
+            e.printStackTrace();
+            System.out.println("Error reading client's input/output stream");
             System.exit(1);
         }
     }
 
-    // format of input operacja [ktoryIndeks] jesli indeks ma sens w danym kontekscie
-    // np. w kontekscie wyswietlania wszystkiegostring nie ma sensu
-    //TODO: refactor it
-    private void handleRequest(String request, PrintWriter printWriter) throws NumberFormatException, IndexOutOfBoundsException, NoSuchElementException, IOException, InterruptedException {
-        //tokenize request
+    // format of input operation [index] if in given context makes sense
+    // e.g 'print' request doesn't have index
+    private void handleRequest(String request, Socket clientSocket) throws NumberFormatException, IndexOutOfBoundsException, NoSuchElementException, IOException, InterruptedException {
+        PrintWriter printWriter = new PrintWriter(clientSocket.getOutputStream());
         StringTokenizer stringTokenizer = new StringTokenizer(request, " ");
         String operation = stringTokenizer.nextToken();
         switch(operation) {
-            //TODO: refactor
             case "reserve":
-               if(isSimulation) simulationBehaviour(request);
-               semaphore.acquire();
-                 System.out.println(Thread.currentThread().getName());
-                 String clientId = clientSocket.getRemoteSocketAddress().toString();
-                 int indexToBook = Integer.parseInt(stringTokenizer.nextToken());
-                 boolean isSuccesful =  appointmentsStorage.reserveOne(indexToBook, clientId);
-                 if(isSuccesful) {
-                     clientStorage.sendToAll("!!! Appointment: " + appointmentsStorage.getAppointment(indexToBook)+" booked !!!");
-                 } else {
-                     printWriter.println("Appointment already booked!");
-                     printWriter.flush();
-                 }
-                System.out.println(Thread.currentThread().getName());
-               semaphore.release();
-                break;
             case "cancel":
-                if(isSimulation) simulationBehaviour(request);
+                simulationBehaviour(request);
                 semaphore.acquire();
-                int indexToCancel = Integer.parseInt(stringTokenizer.nextToken());
-                String clientId1 = clientSocket.getRemoteSocketAddress().toString();
-                boolean isSuccesfullyCancelled = appointmentsStorage.cancel(indexToCancel, clientId1);
-                if(isSuccesfullyCancelled) {
-                    clientStorage.sendToAll("!!! Appointment: " + appointmentsStorage.getAppointment(indexToCancel) + " cancelled !!!");
+                int index = Integer.parseInt(stringTokenizer.nextToken());
+                String secretKey = stringTokenizer.nextToken();
+                boolean isSuccesful = false;
+                String broadcastMsg = "";
+                String msgToOne = "";
+                switch(operation) {
+                    case "reserve":
+                        String nick = stringTokenizer.nextToken();
+                        isSuccesful = appointmentsStorage.reserveOne(index, nick, secretKey);
+                        msgToOne = "Appointment already booked!";
+                        broadcastMsg = "!!! Appointment: " + appointmentsStorage.getAppointment(index)+" booked !!!";
+                        break;
+                    case "cancel":
+                        isSuccesful = appointmentsStorage.cancel(index, secretKey);
+                        msgToOne = "You are not allowed to cancel not your reservation!";
+                        broadcastMsg = "!!! Appointment: " + appointmentsStorage.getAppointment(index) + " cancelled !!!";
+                        break;
+                }
+                if(isSuccesful) {
+                    clientStorage.sendToAll(broadcastMsg);
                 } else {
-                    printWriter.println("You are not allowed to cancel not your reservation!");
+                    printWriter.println(msgToOne);
                     printWriter.flush();
                 }
                 semaphore.release();
                 break;
             case "print":
-                for(String appointment : appointmentsStorage.getAll()) {
-                    printWriter.println(appointment);
-                    printWriter.flush();
-                }
+                 appointmentsStorage.printAllAppointments(printWriter);
+                break;
+            case "quit":
+                    clientStorage.removeClient(clientSocket);
+                    clientSocket.close();
                 break;
             default:
                 printWriter.println("Wrong operation!");
@@ -125,17 +132,19 @@ public class Server implements Runnable {
         }
     }
 
+
     // simulates behaviour of dumb user
     // may cause exception when called not by simulation
     // this method do not have to be synchronized as
     // threads have separate stack
     private void simulationBehaviour(String request) {
-
-        boolean isDumb = Boolean.valueOf(request.split(" ")[2]);
+        if(!isSimulation) return;
+        boolean isDumb = Boolean.valueOf(request.split(" ")[4]);
         if(isDumb) {
             try {
                 Thread.sleep(200);
             } catch(InterruptedException e) {
+                System.out.println("Error in simulation waiting of dumb thread");
                 System.exit(1);
             }
         }

@@ -2,12 +2,13 @@ package com.company.tomek.server.storage;
 
 
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.PrintWriter;
+import java.util.*;
 
 public class AppointmentsStorage {
 
     private List<String> appointments = new ArrayList<>(8);
+    private Map<String, String> secretAppointment = new HashMap<>();
 
     public AppointmentsStorage() {
         for(int i = 0 ; i<8 ; i++) {
@@ -16,34 +17,40 @@ public class AppointmentsStorage {
         }
     }
 
-    //TODO: extract this two methods to separate ones
-    public boolean reserveOne(int index,String clientId) {
+
+    public boolean reserveOne(int index, String nick, String secretKey) {
         String appointment = appointments.get(index);
         if(isReserved(appointment)) return false;
         String appointmentReplacement = appointment.replace("free", "booked").
-                                            replace("reserved by -", "reserved by " + clientId);
+                                        replace("reserved by -", "reserved by " + nick);
+        secretAppointment.put(secretKey, appointmentReplacement);
         appointments.remove(index);
         appointments.add(index, appointmentReplacement);
         return true;
     }
 
-    public boolean cancel(int index, String clientId) {
+    public boolean cancel(int index, String secretKey) {
         String appointment = appointments.get(index);
-        if(!isOwner(appointment, clientId)) return false;
+        if(!isOwner(appointment, secretKey)) return false;
         String appointmentReplacement = appointment.replace("booked", "free").
                         replaceAll("reserved by .++","reserved by -");
         appointments.remove(index);
+        secretAppointment.remove(secretKey);
         appointments.add(index, appointmentReplacement);
         return true;
     }
 
-
-    public List<String> getAll() {
-        return appointments;
+    public void printAllAppointments(PrintWriter printWriter) {
+        for(String appointment : appointments) {
+            printWriter.println(appointment);
+            printWriter.flush();
+        }
     }
 
-    private boolean isOwner(String appointment, String clientId) {
-        return  appointment.contains(clientId);
+    private boolean isOwner(String appointment, String secretKey) {
+       Optional<String> key = Optional.ofNullable(secretAppointment.get(secretKey));
+       if(key.orElse("").equals(appointment)) return true;
+       return false;
     }
 
     public String getAppointment(int index) {

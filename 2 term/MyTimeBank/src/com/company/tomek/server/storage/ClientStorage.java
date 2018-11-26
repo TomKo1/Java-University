@@ -28,4 +28,8 @@ public class ClientStorage {
             throw e;
         }
     }
+
+    public void removeClient(Socket socket) {
+        clientsSockets.remove(socket);
+    }
 }

@@ -12,19 +12,52 @@ import java.net.Socket;
 public class Main {
 
     public static void main(String[] args) {
-        makeSimultaneousOperation("reserve");
-        makeSimultaneousOperation("cancel");
-    }
+        try {
+            System.out.println("### RESERVATION EXAMPLE ####");
+            makeSimultaneousOperation("reserve");
+            System.out.println("########################");
+            System.out.println("### PRINT ALL APPOINTMENTS ###");
+            System.out.println("########################");
+            makePrintRequest();
+            System.out.println("########################");
+            System.out.println("########################");
+            System.out.println("### CANCEL EXAMPLE ####");
+            System.out.println("########################");
+            makeSimultaneousOperation("cancel");
+            System.out.println("########################");
+            System.out.println("### PRINT ALL APPOINTMENTS ###");
+            System.out.println("########################");
+            makePrintRequest();
+            System.out.println("########################");
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+            System.out.println("Error occured in simulation, please try later");
+            System.exit(1);
+        }
+     }
 
-    private static void makeSimultaneousOperation(String operation) {
-        // reserve the same object
-        new Thread(()-> {
-            makeConnection(operation + "1 true", "Dumb user"); //dumb user
-        }).start();
+     private static void makePrintRequest() throws InterruptedException {
+         Thread thread = new Thread(()-> {
+             makeConnection("print", "Clever user");
+         });
+         thread.start();
+         thread.join();
+     }
 
-        new Thread(()-> {
-            makeConnection(operation+" 1 false", "Clever user"); //dumb user
-        }).start();
+    private static void makeSimultaneousOperation(String operation) throws InterruptedException {
+        Thread dumbUserThread = new Thread(()-> {
+            makeConnection(operation + " 1 111111 DUMMY true", "Dumb user"); //dumb user
+        });
+
+        Thread cleverUserThread = new Thread(()-> {
+            makeConnection(operation+" 1 222222 CLEVER false", "Clever user"); //dumb user
+        });
+
+
+        dumbUserThread.start();
+        cleverUserThread.start();
+        dumbUserThread.join();
+        cleverUserThread.join();
     }
 
     private static void makeConnection(String request, String clientNick) {
@@ -34,6 +67,9 @@ public class Main {
 
             PrintWriter out = new PrintWriter(socket.getOutputStream());
             out.println(request);
+            out.flush();
+
+            out.println("quit");
             out.flush();
 
             //TODO: get rid of this

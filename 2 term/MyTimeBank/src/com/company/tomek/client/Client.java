@@ -12,7 +12,7 @@ public class Client implements Runnable {
     private String nick;
 
     public Client(Socket socket) {
-        this(socket, "N/A");
+        this(socket, "");
     }
 
     // constructor for simulation purposes
@@ -22,21 +22,37 @@ public class Client implements Runnable {
     }
 
     public static void main(String[] args) {
+
         Scanner scanner = new Scanner(System.in);
         try (Socket socket = new Socket("localhost", 4040)) {
             // run separate thread to get broadcast
             new Thread(new Client(socket)).start();
+            printInitialInfo();
             while (true) {
                 System.out.println("Request:");
                 String request = scanner.nextLine();
                 PrintWriter out = new PrintWriter(socket.getOutputStream());
                 out.println(request);
                 out.flush();
+                if(request.equals("quit")) {
+                    socket.close();
+                    break;
+                }
             }
         } catch (IOException e) {
             System.out.print("Error while establishing the connection to the server");
             System.exit(1);
         }
+    }
+
+
+    private static void printInitialInfo() {
+        System.out.println("##########################################");
+        System.out.println("Format of requests:");
+        System.out.println("reserve index your_secret_id_number your_nick");
+        System.out.println("print");
+        System.out.println("cancel index your_secret_id_number");
+        System.out.println("##########################################");
     }
 
     @Override
@@ -47,13 +63,14 @@ public class Client implements Runnable {
             String msgFromServer;
 
             while(( msgFromServer = bufferedReader.readLine() ) != null) {
-                //TODO: get rid of this
-                String localNick = nick.equals("N/A") ? "" : this.nick;
-                System.out.printf("Message for %s: %s \n", localNick + socket.getLocalSocketAddress().toString(), msgFromServer);
+                if(!nick.isEmpty()) {
+                    // print message in simulation mode format
+                    System.out.printf("Message for %s: %s \n", nick, msgFromServer);
+                    continue;
+                }
+                System.out.println(msgFromServer);
             }
         } catch(IOException e) {
-            // TODO: prawdopodobnie trzeba sprpagować ten wyjątek albo coś
-            //TODO: get rid of this exception
             //e.printStackTrace();
             //System.out.println("Error while establishing broadcast reader connection in 'Client' class");
             System.exit(1);
