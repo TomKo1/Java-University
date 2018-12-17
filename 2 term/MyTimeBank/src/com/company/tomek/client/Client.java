@@ -73,7 +73,7 @@ public class Client implements Runnable {
         } catch(IOException e) {
             //e.printStackTrace();
             //System.out.println("Error while establishing broadcast reader connection in 'Client' class");
-            System.exit(1);
+            System.exfit(1);
         }
     }
 }
