@@ -82,7 +82,13 @@ public class GeneticAlgorithm {
 	}
 
 
-	// selects 10 percent top for parents
+	/**
+	 *  Selects 10 percent top for parents
+	 * @param oldPopulation population from which we select top 10 percent
+	 *                      of chromosomes
+	 * @param numberOfSurvivors number of survivors
+	 * @return new population including survivors
+	 */
 	private Population performElitism(Population oldPopulation, int numberOfSurvivors) {
 		Population newPopulation = new Population(oldPopulation.size(), function);
 		oldPopulation.sortDescFitness();

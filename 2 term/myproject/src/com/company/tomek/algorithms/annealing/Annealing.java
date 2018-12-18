@@ -74,6 +74,10 @@ public class Annealing {
      * @param solution the solution to mutate
      * @param temperature temperature used to randomize 'scaling' factor
      * @return mutated solution
+     * * @see <a href="https://stackoverflow.com/questions/31754209/can-random-nextgaussian-sample-values-from-a-distribution-with-different-mean">Next Gausian</a>
+     *    and
+     *  @see <a href="https://pl.wikipedia.org/wiki/Symulowane_wy%C5%BCarzanie">[PL] Symulwane wyrzażanie</a>
+     *
      */
     private Solution mutate(Solution solution, double temperature) {
         // add random number
