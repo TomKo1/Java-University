@@ -9,10 +9,10 @@ public class Test {
 
 
     public static void main(String[] args) {
-        GeneticAlgorithm gen = new GeneticAlgorithm(new BoothFunction());
-        gen.performGeneticAlgorithm();
+//        GeneticAlgorithm gen = new GeneticAlgorithm(new BoothFunction());
+  //      gen.performGeneticAlgorithm();
 
-//        Annealing an = new Annealing(new BoothFunction());
-//        an.performAlgorithm();
+        Annealing an = new Annealing(new BoothFunction());
+        an.performAlgorithm();
     }
 }

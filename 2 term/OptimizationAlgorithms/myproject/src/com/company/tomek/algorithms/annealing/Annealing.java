@@ -86,7 +86,7 @@ public class Annealing {
         // https://stackoverflow.com/questions/31754209/can-random-nextgaussian-sample-values-from-a-distribution-with-different-mean
         // ??
         double randomDelta = random.nextGaussian() * deviation + solution.getX() + solution.getY();
-        System.out.println("Wylosowane randomDelta: " + randomDelta);
+        //System.out.println("Wylosowane randomDelta: " + randomDelta);
         double newX = solution.getX() + randomDelta;
         double newY = solution.getY() + randomDelta;
         return new Solution(newX, newY);
